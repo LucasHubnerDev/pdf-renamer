@@ -1,0 +1,81 @@
+# config.py
+"""
+Painel de controle do sistema.
+
+Tudo que um usuário avançado ajusta sem tocar na lógica.
+Nenhuma lógica mora aqui, só declarações.
+"""
+from classification.rules import ClassificationRule
+
+# ---------------------------------------------------------------------------
+# OCR
+# ---------------------------------------------------------------------------
+OCR_ENGINE = "tesseract"   # nome registrado em extraction/ocr/factory.py
+OCR_LANG = "por"           # pacote de idioma do Tesseract
+OCR_DPI = 300              # resolução ao rasterizar páginas escaneadas
+
+# ---------------------------------------------------------------------------
+# Políticas de renomeação
+# ---------------------------------------------------------------------------
+MAIUSCULAS = True          # "FATURA 1920 LUCAS" em vez de "Fatura 1920 Lucas"
+INCLUIR_SEM_DATA = True    # mantém no fluxo PDFs cuja data não foi encontrada
+
+# ---------------------------------------------------------------------------
+# Catálogo de campos (id -> rótulo exibido no menu)
+# ---------------------------------------------------------------------------
+FIELD_CATALOG: dict[str, str] = {
+    "TIPO": "Tipo do documento",
+    "NUMERO": "Número",
+    "CLIENTE": "Nome do cliente",
+    "DATA": "Data",
+    "CPF": "CPF",
+    "CNPJ": "CNPJ",
+    "VALOR": "Valor",
+    "VENCIMENTO": "Vencimento",
+    "CODIGO_BARRAS": "Código de barras",
+}
+
+# ---------------------------------------------------------------------------
+# Regras de classificação
+# ---------------------------------------------------------------------------
+# A ORDEM IMPORTA: regras mais específicas primeiro, porque em caso de
+# empate de pontuação vence a primeira da lista. "obrigatorias" = todas
+# devem aparecer; "opcionais" = cada ocorrência soma ponto.
+DEFAULT_RULES: list[ClassificationRule] = [
+    ClassificationRule(
+        tipo="NOTA FISCAL DE SERVIÇO",
+        rotulo="NFS",
+        obrigatorias=("nota fiscal de serviço",),
+        opcionais=("cnpj", "discriminação", "código de verificação",
+                   "valor dos serviços"),
+    ),
+    ClassificationRule(
+        tipo="NOTA FISCAL",
+        rotulo="NF",
+        obrigatorias=("nota fiscal",),
+        opcionais=("chave de acesso", "cnpj", "nf-e", "série",
+                   "emitente", "destinatário", "icms"),
+    ),
+    ClassificationRule(
+        tipo="DETALHAMENTO DE BOLETO",
+        obrigatorias=("detalhamento", "boleto"),
+        opcionais=("linha digitável", "nosso número", "banco"),
+    ),
+    ClassificationRule(
+        tipo="DETALHAMENTO DE FATURA",
+        obrigatorias=("detalhamento", "fatura"),
+        opcionais=("vencimento", "valor"),
+    ),
+    ClassificationRule(
+        tipo="BOLETO",
+        obrigatorias=("boleto",),
+        opcionais=("linha digitável", "nosso número", "banco",
+                   "cedente", "sacado", "vencimento"),
+    ),
+    ClassificationRule(
+        tipo="FATURA",
+        obrigatorias=("fatura",),
+        opcionais=("vencimento", "valor da fatura", "referência",
+                   "cliente", "total a pagar"),
+    ),
+]
