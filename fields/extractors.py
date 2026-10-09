@@ -21,7 +21,10 @@ RE_CPF = re.compile(r"\b\d{3}\.?\d{3}\.?\d{3}[-.]?\d{2}\b")
 
 RE_CNPJ = re.compile(r"\b\d{2}\.?\d{3}\.?\d{3}/?\d{4}-?\d{2}\b")
 
-RE_VALOR = re.compile(r"((?:\d{1,3}\.)*\d{1,3},\d{2})")
+RE_VALOR_DOCUMENTO = re.compile(
+    r"valor\s+do\s+documento\s*[:\-]?\s*((?:\d{1,3}\.)*\d{1,3},\d{2})",
+    re.IGNORECASE,
+)
 
 RE_VENCIMENTO = re.compile(
     r"vencimento\s*[:\-]?\s*(\d{2}[/\-.]\d{2}[/\-.]\d{2,4})", re.IGNORECASE
@@ -30,12 +33,12 @@ RE_VENCIMENTO = re.compile(
 RE_NUMERO = re.compile(
     r"""
     (?:
-          n[ºo°]\s*          # Nº / No / N°
-        | n[uú]mero\b        # Número / Numero
-        | nf[-\s]?e          # NF-e
+          n[ºo°.]?\s*do\s+documento    # Nº do Documento / N. do Documento
+        | n[uú]mero\s+do\s+documento
+        | n[uú]mero\s*[:\-]\s*(?=\d)   # "Número: 123" (exige dois-pontos)
+        | nf[-\s]?e
     )
-    \s*(?:do\s+documento|da\s+nota|da\s+fatura)?\s*
-    [:\-]?\s*
+    \s*[:\-]?\s*
     (\d{1,15})
     """,
     re.IGNORECASE | re.VERBOSE,
@@ -43,7 +46,7 @@ RE_NUMERO = re.compile(
 
 RE_CLIENTE = re.compile(
     r"^\s*(?:cliente|titular|raz[ãa]o\s+social|nome\s+do\s+cliente"
-    r"|sacado|destinat[áa]rio|emitente)\s*[:\-]\s*(.+?)\s*$",
+    r"|sacado|pagador|destinat[áa]rio|emitente)\s*[:\-]\s*(.+?)\s*$",
     re.IGNORECASE | re.MULTILINE,
 )
 
@@ -109,7 +112,12 @@ def extrair_numero(texto: str) -> str | None:
 
 def extrair_cliente(texto: str) -> str | None:
     m = RE_CLIENTE.search(texto)
-    return m.group(1) if m else None
+    if not m:
+        return None
+    nome = m.group(1)
+    # "MAYKON ... - CPF/CNPJ: 957..." -> "MAYKON ..."
+    nome = re.split(r"\s+-\s+(?:CPF|CNPJ)", nome, flags=re.IGNORECASE)[0]
+    return nome.strip()
 
 
 def extrair_cpf(texto: str) -> str | None:
@@ -123,14 +131,13 @@ def extrair_cnpj(texto: str) -> str | None:
 
 
 def extrair_valor(texto: str) -> str | None:
-    """Procura valores monetários em ordem de confiança:
-    'R$ 1.234,56' > 'VALOR: 1.234,56' > primeiro '1.234,56' do texto."""
-    m = re.search(r"R\$\s*((?:\d{1,3}\.)*\d{1,3},\d{2})", texto)
+    m = RE_VALOR_DOCUMENTO.search(texto)          # 1) rótulo específico
+    if m:
+        return m.group(1)
+    m = re.search(r"R\$\s*((?:\d{1,3}\.)*\d{1,3},\d{2})", texto)  # 2) genérico
     if not m:
         m = re.search(r"valor[^\n\d]{0,40}?((?:\d{1,3}\.)*\d{1,3},\d{2})",
                       texto, re.IGNORECASE)
-    if not m:
-        m = RE_VALOR.search(texto)
     return m.group(1) if m else None
 
 

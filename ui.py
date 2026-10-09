@@ -96,13 +96,14 @@ def _truncar(texto: str, largura: int) -> str:
 
 def mostrar_previa(pares: list[tuple[str, str]]) -> bool:
     """Etapas 6 e 7: tabela antes de renomear + confirmação explícita."""
-    separador = "=" * (LARGURA_COLUNA * 2 + 3)
+    largura = LARGURA_COLUNA
+    separador = "=" * (largura * 2 + 3)
     print("\n" + separador)
-    print(f"{'ARQUIVO ORIGINAL':<{LARGURA}}   {'NOVO NOME':<{LARGURA}}")
-    print("-" * (LARGURA_COLUNA * 2 + 3))
+    print(f"{'ARQUIVO ORIGINAL':<{largura}}   {'NOVO NOME':<{largura}}")
+    print("-" * (largura * 2 + 3))
     for original, novo in pares:
-        print(f"{_truncar(original, LARGURA):<{LARGURA}}   "
-              f"{_truncar(novo, LARGURA)}")
+        print(f"{_truncar(original, largura):<{largura}}   "
+              f"{_truncar(novo, largura)}")
     print(separador)
     resposta = input("\nDeseja executar essas alterações? [S/N]: ").strip().lower()
     return resposta in ("s", "sim")

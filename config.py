@@ -67,10 +67,10 @@ DEFAULT_RULES: list[ClassificationRule] = [
         opcionais=("vencimento", "valor"),
     ),
     ClassificationRule(
-        tipo="BOLETO",
-        obrigatorias=("boleto",),
-        opcionais=("linha digitável", "nosso número", "banco",
-                   "cedente", "sacado", "vencimento"),
+    tipo="BOLETO",
+    obrigatorias=("nosso número",),
+    opcionais=("bloqueto", "boleto", "linha digitável", "ficha de compensação",
+               "vencimento", "sacado", "pagador", "beneficiário"),
     ),
     ClassificationRule(
         tipo="FATURA",
