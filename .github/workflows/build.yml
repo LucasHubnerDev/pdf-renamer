@@ -1,0 +1,52 @@
+name: Build Windows
+
+on:
+  workflow_dispatch:      # botão "Run workflow" na página do Actions
+  push:
+    tags: ["v*"]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar pacotes Python
+        run: pip install -r requirements.txt pyinstaller
+
+      - name: Instalar Tesseract
+        run: choco install tesseract -y
+
+      - name: Baixar idioma português do Tesseract
+        shell: pwsh
+        run: >
+          Invoke-WebRequest
+          "https://github.com/tesseract-ocr/tessdata_fast/raw/main/por.traineddata"
+          -OutFile "C:\Program Files\Tesseract-OCR\tessdata\por.traineddata"
+
+      - name: Baixar Poppler
+        shell: pwsh
+        run: |
+          Invoke-WebRequest `
+            "https://github.com/oschwartz10612/poppler-windows/releases/download/v24.02.0-0/Release-24.02.0.zip" `
+            -OutFile poppler.zip
+          Expand-Archive poppler.zip -DestinationPath C:\poppler
+
+      - name: Gerar o executável
+        shell: cmd
+        run: >
+          pyinstaller --noconfirm --onefile --windowed --name PDFRenamer
+          --collect-all customtkinter
+          --add-binary "C:\Program Files\Tesseract-OCR\*;tesseract"
+          --add-data "C:\Program Files\Tesseract-OCR\tessdata\por.traineddata;tesseract\tessdata"
+          --add-binary "C:\poppler\poppler-*\Library\bin\*;poppler\bin"
+          main_gui.py
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PDFRenamer
+          path: dist/PDFRenamer.exe
