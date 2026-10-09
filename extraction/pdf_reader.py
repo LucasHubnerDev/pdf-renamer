@@ -26,20 +26,21 @@ class PdfContentReader:
 
     def read(self, path: Path) -> PdfContent:
         try:
-            texto = self.text_extractor.extract(path)
+            paginas = self.text_extractor.extract(path)
+            texto = "\n".join(paginas)
             if texto_e_util(texto):
                 return PdfContent(text=texto,
-                                  method=ExtractionMethod.TEXTO_NATIVO)
+                                  method=ExtractionMethod.TEXTO_NATIVO,
+                                  paginas=paginas)
             return self._ler_com_ocr(path)
         except Exception as exc:
             return PdfContent(text="", method=ExtractionMethod.FALHOU,
                               error=str(exc))
 
     def _ler_com_ocr(self, path: Path) -> PdfContent:
-        # Import tardio: pdf2image só é carregado se realmente houver OCR.
         from pdf2image import convert_from_path
 
-        paginas = convert_from_path(path, dpi=self.dpi)
-        partes = [self.ocr.recognize(imagem) for imagem in paginas]
-        return PdfContent(text="\n".join(partes),
-                          method=ExtractionMethod.OCR)
+        imagens = convert_from_path(path, dpi=self.dpi)
+        paginas = [self.ocr.recognize(imagem) for imagem in imagens]
+        return PdfContent(text="\n".join(paginas),
+                          method=ExtractionMethod.OCR, paginas=paginas)

@@ -9,13 +9,24 @@ Se o volume de documentos um dia justificar um modelo treinado,
 esta é a única classe a substituir; a assinatura não muda.
 """
 import re
+import unicodedata
 
 from classification.rules import ClassificationRule
 
 
+def _sem_acentos(texto: str) -> str:
+    return "".join(c for c in unicodedata.normalize("NFD", texto)
+                   if unicodedata.category(c) != "Mn")
+
+
 def _contem(texto: str, termo: str) -> bool:
-    """Casa o termo como palavra inteira, ignorando maiúsculas/minúsculas."""
-    padrao = r"\b" + re.escape(termo.lower()) + r"\b"
+    """Casa o termo como palavra inteira, ignorando maiúsculas e acentos.
+
+    Acentos são removidos dos dois lados porque PDFs escaneados e
+    fontes de impressora frequentemente os perdem ("nosso numero").
+    """
+    texto = _sem_acentos(texto.lower())
+    padrao = r"\b" + re.escape(_sem_acentos(termo.lower())) + r"\b"
     return re.search(padrao, texto) is not None
 
 

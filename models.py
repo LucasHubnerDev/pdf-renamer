@@ -18,9 +18,15 @@ class ExtractionMethod(str, Enum):
 
 @dataclass
 class PdfContent:
-    """Texto bruto de um PDF, independente de como foi extraído."""
+    """Texto bruto de um PDF, independente de como foi extraído.
+
+    paginas guarda o texto de cada página separadamente; o pipeline
+    usa isso para restringir a extração à primeira página quando o
+    tipo do documento exige (ex.: faturas).
+    """
     text: str
     method: ExtractionMethod
+    paginas: list[str] = field(default_factory=list)
     error: str | None = None
 
     @property

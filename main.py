@@ -26,17 +26,17 @@ from renaming.renamer import (
 from report import gerar_relatorio
 
 
+from config import (DEFAULT_RULES, FIELD_CATALOG, INCLUIR_SEM_DATA,
+                    TIPOS_PRIMEIRA_PAGINA)
+
+
 def processar_pasta(
     pasta: Path,
     periodo: tuple,
     tipos: list[str],
     campos: list[str],
 ) -> list[DocumentInfo]:
-    """Etapa 5: percorre os PDFs isolando falhas por arquivo.
-
-    Um PDF com erro NUNCA interrompe o lote: ele entra no relatório
-    e o processamento segue para os demais.
-    """
+    """Etapa 5: percorre os PDFs isolando falhas por arquivo."""
     data_ini, data_fim = periodo
     pdfs = sorted(p for p in pasta.iterdir() if p.suffix.lower() == ".pdf")
     print(f"\nAnalisando {len(pdfs)} PDF(s) em {pasta} ...")
@@ -54,15 +54,24 @@ def processar_pasta(
                 info.error = f"leitura do PDF: {info.content.error}"
                 continue
 
+            # Classificação usa o texto COMPLETO do documento.
             regra = classificador.classify(info.content.text)
             info.doc_type = regra.tipo if regra else "OUTROS"
             info.doc_rotulo = (regra.rotulo or regra.tipo) if regra else "OUTROS"
-            info.fields = extrair_fields(info.content.text, campos)
 
-            info.document_date = encontrar_data_documento(info.content.text)
+            # Faturas: campos e data vêm SOMENTE da primeira página.
+            # As páginas seguintes trazem cópias dos DANFEs das NFC-e,
+            # com datas, nomes e valores próprios que poluem a extração
+            # e atrapalham o filtro de período.
+            texto_extracao = info.content.text
+            if (info.doc_type in TIPOS_PRIMEIRA_PAGINA
+                    and info.content.paginas):
+                texto_extracao = info.content.paginas[0]
+
+            info.fields = extrair_fields(texto_extracao, campos)
+            info.document_date = encontrar_data_documento(texto_extracao)
             info.date_found = info.document_date is not None
 
-            # Filtros do usuário: tipo e período.
             if info.doc_type not in tipos:
                 info.skip_reason = f"tipo não selecionado ({info.doc_type})"
                 continue

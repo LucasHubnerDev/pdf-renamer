@@ -23,15 +23,14 @@ def texto_e_util(texto: str) -> bool:
 
 
 class TextExtractor:
-    """Extrai texto das páginas de um PDF nativo."""
+    """Extrai o texto de cada página de um PDF nativo."""
 
-    def extract(self, path: Path) -> str:
+    def extract(self, path: Path) -> list[str]:
         reader = PdfReader(path)
         paginas: list[str] = []
         for pagina in reader.pages:
             try:
                 paginas.append(pagina.extract_text() or "")
             except Exception:
-                # Uma página problemática não pode derrubar o arquivo inteiro.
                 paginas.append("")
-        return "\n".join(paginas)
+        return paginas
