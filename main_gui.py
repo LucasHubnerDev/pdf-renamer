@@ -67,19 +67,28 @@ class AppPdfRenamer(ctk.CTk):
         self.geometry(f"+{x}+{y}")
 
     def _secao(self, titulo: str) -> ctk.CTkFrame:
-        """Painel arredondado com rótulo pequeno em caixa alta."""
+        """Painel arredondado com rótulo em caixa alta.
+
+        Devolve o quadro de CONTEÚDO interno. O rótulo fica no quadro
+        externo (pack) e o conteúdo no interno; assim o conteúdo pode
+        usar grid sem conflito, porque o Tkinter não permite misturar
+        pack e grid dentro do MESMO contêiner.
+        """
         quadro = ctk.CTkFrame(self, corner_radius=10, fg_color=CARTAO)
         quadro.pack(fill="x", padx=16, pady=(10, 0))
         ctk.CTkLabel(quadro, text=titulo.upper(),
                      font=ctk.CTkFont(size=12, weight="bold"),
                      text_color=TEXTO_FRACO).pack(
             anchor="w", padx=14, pady=(10, 2))
-        return quadro
+        conteudo = ctk.CTkFrame(quadro, fg_color="transparent")
+        conteudo.pack(fill="x", padx=14, pady=(2, 12))
+        return conteudo
 
-    def _checkbox(self, pai, texto: str, var) -> ctk.CTkCheckBox:
+    def _checkbox(self, pai, texto: str, var,
+                  command=None) -> ctk.CTkCheckBox:
         return ctk.CTkCheckBox(pai, text=texto, variable=var,
                                checkbox_width=18, checkbox_height=18,
-                               corner_radius=5)
+                               corner_radius=5, command=command)
 
     def _montar_tela(self):
         # Cabeçalho
@@ -93,31 +102,28 @@ class AppPdfRenamer(ctk.CTk):
 
         # 1. Pasta
         quadro = self._secao("1. Pasta dos PDFs")
-        linha = ctk.CTkFrame(quadro, fg_color="transparent")
-        linha.pack(fill="x", padx=14, pady=(2, 12))
-        self.lbl_pasta = ctk.CTkLabel(linha, text="Nenhuma pasta selecionada",
+        self.lbl_pasta = ctk.CTkLabel(quadro, text="Nenhuma pasta selecionada",
                                       text_color=TEXTO_FRACO)
         self.lbl_pasta.pack(side="left")
-        ctk.CTkButton(linha, text="Selecionar…", width=110,
+        ctk.CTkButton(quadro, text="Selecionar…", width=110,
                       command=self._selecionar_pasta).pack(side="right")
 
         # 2. Período
         quadro = self._secao("2. Período (opcional)")
-        linha = ctk.CTkFrame(quadro, fg_color="transparent")
-        linha.pack(anchor="w", padx=14, pady=(2, 12))
-        ctk.CTkLabel(linha, text="Data inicial:").pack(side="left")
-        self.ent_ini = ctk.CTkEntry(linha, width=110,
+        ctk.CTkLabel(quadro, text="Data inicial:").pack(side="left")
+        self.ent_ini = ctk.CTkEntry(quadro, width=110,
                                     placeholder_text="dd/mm/aaaa")
         self.ent_ini.pack(side="left", padx=(6, 16))
-        ctk.CTkLabel(linha, text="Data final:").pack(side="left")
-        self.ent_fim = ctk.CTkEntry(linha, width=110,
+        ctk.CTkLabel(quadro, text="Data final:").pack(side="left")
+        self.ent_fim = ctk.CTkEntry(quadro, width=110,
                                     placeholder_text="dd/mm/aaaa")
         self.ent_fim.pack(side="left", padx=6)
 
-        # 3. Tipos
+        # 3. Tipos (grid liberado: quadro agora é o contêiner de conteúdo)
         quadro = self._secao("3. Tipos a processar")
         self.var_todos = ctk.BooleanVar(value=True)
-        self._checkbox(quadro, "Todos", self.var_todos).grid(
+        self._checkbox(quadro, "Todos", self.var_todos,
+                       command=self._alternar_todos).grid(
             row=0, column=0, sticky="w", padx=8, pady=3)
         tipos = [r.tipo for r in DEFAULT_RULES] + ["OUTROS"]
         for i, tipo in enumerate(tipos, start=1):
