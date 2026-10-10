@@ -44,8 +44,8 @@ class PdfContentReader:
 
         # Dentro do .exe: usa o Poppler embutido pelo PyInstaller.
         # Do código-fonte: None faz o pdf2image buscar no PATH do sistema.
-        paginas = convert_from_path(path, dpi=self.dpi,
+        imagens = convert_from_path(path, dpi=self.dpi,
                                     poppler_path=caminho_poppler())
-        partes = [self.ocr.recognize(imagem) for imagem in paginas]
-        return PdfContent(text="\n".join(partes),
-                          method=ExtractionMethod.OCR, paginas=paginas)
+        textos = [self.ocr.recognize(imagem) for imagem in imagens]
+        return PdfContent(text="\n".join(textos),
+                          method=ExtractionMethod.OCR, paginas=textos)
