@@ -15,6 +15,7 @@ from config import OCR_DPI, OCR_ENGINE, OCR_LANG
 from extraction.ocr.factory import criar_motor_ocr
 from extraction.text_extractor import TextExtractor, texto_e_util
 from models import ExtractionMethod, PdfContent
+from paths import caminho_poppler
 
 
 class PdfContentReader:
@@ -38,9 +39,13 @@ class PdfContentReader:
                               error=str(exc))
 
     def _ler_com_ocr(self, path: Path) -> PdfContent:
+        # Import tardio: pdf2image só é carregado se realmente houver OCR.
         from pdf2image import convert_from_path
 
-        imagens = convert_from_path(path, dpi=self.dpi)
-        paginas = [self.ocr.recognize(imagem) for imagem in imagens]
-        return PdfContent(text="\n".join(paginas),
+        # Dentro do .exe: usa o Poppler embutido pelo PyInstaller.
+        # Do código-fonte: None faz o pdf2image buscar no PATH do sistema.
+        paginas = convert_from_path(path, dpi=self.dpi,
+                                    poppler_path=caminho_poppler())
+        partes = [self.ocr.recognize(imagem) for imagem in paginas]
+        return PdfContent(text="\n".join(partes),
                           method=ExtractionMethod.OCR, paginas=paginas)
