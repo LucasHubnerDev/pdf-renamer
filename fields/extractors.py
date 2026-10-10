@@ -76,6 +76,8 @@ _ROTULOS_DE_DATA: list[tuple[str, str]] = [
      r"^data\s*[:\-]\s*(\d{2}[/\-.]\d{2}[/\-.]\d{2,4})"),
     ("competência",
      r"compet[êe]ncia\s*[:\-]?\s*(\d{2}[/\-.]\d{2}[/\-.]\d{2,4})"),
+    ("data da fatura",
+     r"data\s+da\s+fatura\s*[:\-]?\s*(\d{2}[/\-.]\d{2}[/\-.]\d{2,4})"),
     ("vencimento",
      r"vencimento\s*[:\-]?\s*(\d{2}[/\-.]\d{2}[/\-.]\d{2,4})"),
 ]
