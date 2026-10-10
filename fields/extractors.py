@@ -150,6 +150,10 @@ def _limpar_nome(bruto: str) -> str | None:
                     flags=re.IGNORECASE)[0]
     # "Cliente.: 010765 TRES MARIAS..." -> "TRES MARIAS..."
     nome = re.sub(r"^\d+\s+", "", nome).strip()
+    nome = re.sub(
+        r"\s*-\s*(?:\d{3}\.?\d{3}\.?\d{3}-?\d{2}"
+        r"|\d{2}\.?\d{3}\.?\d{3}/?\d{4}-?\d{2})\s*$",
+        "", nome)
     if not nome:
         return None
     fim = nome.lower()
